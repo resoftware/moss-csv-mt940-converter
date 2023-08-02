@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -28,6 +29,9 @@ public static class ConvertFunction
         var csvStream = file.OpenReadStream();
         var transactions = new List<TransactionData>();
 
+        var dutchCulture = new CultureInfo("nl-NL");
+        var csvParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
+
         using (var reader = new StreamReader(csvStream))
         {
             // Skip the first line.
@@ -40,21 +44,21 @@ public static class ConvertFunction
                 if (line == null)
                     continue;
                 
-                var values = line.Split(',');
-
-                // Ensure that the values are trimmed.
-                for (var index = 0; index < values.Length; index++)
-                    values[index] = values[index].Trim('"');
+                var values = csvParser.Split(line);
+                
+                // Trim all the quotes of each value.
+                for (var i = 0; i < values.Length; i++)
+                    values[i] = values[i].Trim('"');
 
                 var transaction = new TransactionData
                 {
                     PaymentDate = DateTime.Parse(values[1]),
                     SettlementDate = values[2] != string.Empty ? DateTime.Parse(values[2]) : DateTime.Parse(values[1]),
-                    Amount = decimal.Parse(values[4], CultureInfo.InvariantCulture),
+                    Amount = decimal.Parse(values[4], dutchCulture),
                     MerchantName = values[9],
                     Category = values[10],
-                    MerchantAndCardDescription = values[29],
-                    MossTransactionUrl = values[30]
+                    MerchantAndCardDescription = values[30],
+                    MossTransactionUrl = values[31]
                 };
 
                 transactions.Add(transaction);
