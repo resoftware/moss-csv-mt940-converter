@@ -54,11 +54,15 @@ public static class ConvertFunction
                 {
                     PaymentDate = DateTime.Parse(values[1]),
                     SettlementDate = values[2] != string.Empty ? DateTime.Parse(values[2]) : DateTime.Parse(values[1]),
-                    Amount = decimal.Parse(values[4], dutchCulture),
+                    Amount = decimal.Parse(values[4], new NumberFormatInfo
+                    {
+                        CurrencyGroupSeparator = ",",
+                        CurrencyDecimalSeparator = "."
+                    }),
                     MerchantName = values[9],
                     Category = values[10],
-                    MerchantAndCardDescription = values[30],
-                    MossTransactionUrl = values[31]
+                    MerchantAndCardDescription = values[29],
+                    MossTransactionUrl = values[30]
                 };
 
                 transactions.Add(transaction);
