@@ -23,7 +23,7 @@ public class Mt940
         Content += "{2:I940INGBNL2AXXXN}\n";
         Content += "{4:\n";
         Content += ":20:P230802000000001\n";
-        Content += ":25:NL90KNAB0402850149\n";
+        Content += ":25:GI91RBOS060954439150401\n";
         Content += ":28C:00000\n";
         Content += ":60F:C221130EUR0\n";
             

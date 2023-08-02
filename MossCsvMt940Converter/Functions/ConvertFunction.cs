@@ -18,7 +18,7 @@ namespace MossCsvMt940Converter.Functions;
 public static class ConvertFunction
 {
     [FunctionName("ConvertFunction")]
-    public static async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log)
+    public static async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
     {
         var file = req.Form.Files.SingleOrDefault();
         
