@@ -18,6 +18,8 @@ namespace MossCsvMt940Converter.Functions;
 
 public static class ConvertFunction
 {
+    private static List<string> Headers { get; set; }
+    
     [FunctionName("ConvertFunction")]
     public static async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req, ILogger log)
     {
@@ -29,13 +31,11 @@ public static class ConvertFunction
         var csvStream = file.OpenReadStream();
         var transactions = new List<TransactionData>();
 
-        var dutchCulture = new CultureInfo("nl-NL");
         var csvParser = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
 
         using (var reader = new StreamReader(csvStream))
         {
-            // Skip the first line.
-            await reader.ReadLineAsync();
+            Headers = (await reader.ReadLineAsync())?.Split(',').Select(h => h.Trim('"')).ToList();
             
             while (!reader.EndOfStream)
             {
@@ -50,19 +50,27 @@ public static class ConvertFunction
                 for (var i = 0; i < values.Length; i++)
                     values[i] = values[i].Trim('"');
 
+                var settlementDateIndex = GetIndexForFieldName("Settlement Date");
+                var paymentDateIndex = GetIndexForFieldName("Payment Date");
+                var amountIndex = GetIndexForFieldName("Amount");
+                var merchantNameIndex = GetIndexForFieldName("Merchant Name");
+                var categoryIndex = GetIndexForFieldName("Category");
+                var merchantAndCardDescriptionIndex = GetIndexForFieldName("Merchant and Card Description");
+                var mossTransactionUrlIndex = GetIndexForFieldName("Moss Record URL");
+                
                 var transaction = new TransactionData
                 {
-                    PaymentDate = DateTime.Parse(values[1]),
-                    SettlementDate = values[2] != string.Empty ? DateTime.Parse(values[2]) : DateTime.Parse(values[1]),
-                    Amount = decimal.Parse(values[4], new NumberFormatInfo
+                    PaymentDate = DateTime.Parse(values[paymentDateIndex]),
+                    SettlementDate = values[settlementDateIndex] != string.Empty ? DateTime.Parse(values[settlementDateIndex]) : DateTime.Parse(values[paymentDateIndex]),
+                    Amount = decimal.Parse(values[amountIndex], new NumberFormatInfo
                     {
                         CurrencyGroupSeparator = ",",
                         CurrencyDecimalSeparator = "."
                     }),
-                    MerchantName = values[9],
-                    Category = values[10],
-                    MerchantAndCardDescription = values[29],
-                    MossTransactionUrl = values[30]
+                    MerchantName = values[merchantNameIndex],
+                    Category = values[categoryIndex],
+                    MerchantAndCardDescription = values[merchantAndCardDescriptionIndex],
+                    MossTransactionUrl = values[mossTransactionUrlIndex]
                 };
 
                 transactions.Add(transaction);
@@ -72,6 +80,11 @@ public static class ConvertFunction
         var mt940 = new Mt940(transactions);
 
         return new OkObjectResult(mt940.ToString());
+    }
+
+    public static int GetIndexForFieldName(string fieldName)
+    {
+        return Headers.IndexOf(fieldName);
     }
 }
 
